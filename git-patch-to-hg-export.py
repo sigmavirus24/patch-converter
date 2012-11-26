@@ -7,6 +7,9 @@ USAGE: git-patch-to-hg-export.py < git.patch > hg.patch
 
 from email.utils import parsedate_tz, mktime_tz
 import re
+import os
+import sys
+
 
 def git_patch_to_hg(fin, fout):
     fout.write('# HG changeset patch\n')
@@ -48,9 +51,22 @@ def git_patch_to_hg(fin, fout):
 
     # NOTE: the --/version will still be at the end, but it will be ignored
 
+
+def open_file():
+    if len(sys.argv) > 1:
+        if re.match('https?://', sys.argv[1]):
+            import requests
+            import io
+            resp = requests.get(sys.argv[1])
+            return io.StringIO(resp.content) if resp.ok else io.StringIO('')
+        elif os.path.exists(sys.argv[1]):
+            return open(sys.argv[1])
+    return sys.stdin
+
+
 if __name__ == "__main__":
-    import sys
-    git_patch_to_hg(sys.stdin, sys.stdout)
+    patch_fd = open_file()
+    git_patch_to_hg(patch_fd, sys.stdout)
 
 
 __author__ = "Mark Lodato <lodatom@gmail.com>"
